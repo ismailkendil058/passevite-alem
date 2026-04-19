@@ -431,12 +431,12 @@ const Ordonnance = () => {
         <div ref={printRef} className="p-[40px] p-10 font-sans text-slate-800 bg-white" style={{ width: '210mm', minHeight: '297mm' }}>
           <div className="flex justify-between items-start mb-20">
             <div>
-              <h1 className="text-4xl font-black italic text-primary">PasseVite</h1>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mt-1">Clinique Médicale</p>
+              <h1 className="text-4xl font-black italic text-primary">Dr Alem</h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mt-1">Clinique Dentaire</p>
             </div>
             <div className="text-right">
               <p className="text-lg font-black">Dr. {doctor.name}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Spécialiste de Santé</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Docteur en Médecine</p>
             </div>
           </div>
 

@@ -14,7 +14,6 @@ const LoginMedecin = lazy(() => import("./pages/LoginMedecin"));
 const Accueil = lazy(() => import("./pages/Accueil"));
 const Client = lazy(() => import("./pages/Client"));
 const Manager = lazy(() => import("./pages/Manager"));
-const TV = lazy(() => import("./pages/TV"));
 const Rendezvous = lazy(() => import("./pages/Rendezvous"));
 const Satisfaction = lazy(() => import("./pages/Satisfaction"));
 const AvisGoogle = lazy(() => import("./pages/AvisGoogle"));
@@ -48,7 +47,15 @@ const queryClient = new QueryClient({
 function ProtectedRoute({ children, requiredRoles }: { children: React.ReactNode; requiredRoles?: string[] }) {
   const { user, loading, userRole } = useAuth();
 
+  // Also check if the doctor is logged in via our custom localStorage method
+  const isDoctorLoggedIn = !!localStorage.getItem('doctor_auth');
+
   if (loading) return <LoadingScreen />;
+
+  // Allow doctors unfettered access to protected routes like manager
+  if (isDoctorLoggedIn && requiredRoles && requiredRoles.includes('manager')) {
+    return <>{children}</>;
+  }
 
   if (!user) {
     if (requiredRoles?.includes('manager')) return <Navigate to="/manager/login" replace />;
@@ -81,7 +88,6 @@ const App = () => (
             <Route path="/manager/login" element={<LoginManager />} />
             <Route path="/doctor/login" element={<LoginMedecin />} />
             <Route path="/client" element={<Client />} />
-            <Route path="/tv" element={<TV />} />
             <Route path="/review" element={<Satisfaction />} />
             <Route path="/avis-google" element={<AvisGoogle />} />
             <Route path="/feedback" element={<Feedback />} />

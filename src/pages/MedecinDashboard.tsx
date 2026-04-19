@@ -189,6 +189,10 @@ const MedecinDashboard = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
+                    <Button variant="outline" size="sm" onClick={() => navigate('/manager')} className="h-9 gap-2 text-xs font-bold uppercase tracking-widest flex px-2 sm:px-3">
+                        <LayoutDashboard className="h-4 w-4" />
+                        <span className="hidden sm:inline">Manager</span>
+                    </Button>
                     <div className="hidden lg:flex flex-col text-right">
                         <span className="text-sm font-bold text-slate-700">Dr. {doctorInfo ? doctorInfo.name : 'Chargement...'}</span>
                         <p className="text-[10px] text-muted-foreground uppercase font-medium">Session Active</p>

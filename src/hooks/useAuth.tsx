@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    localStorage.removeItem('doctor_auth');
     await supabase.auth.signOut();
   };
 

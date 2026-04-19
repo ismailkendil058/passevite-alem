@@ -58,14 +58,10 @@ const Rendezvous = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedClient, setSelectedClient] = useState<{ phone: string, name: string } | null>(null);
-    const [selectedDoctorMobile, setSelectedDoctorMobile] = useState<string>('all');
-    const [isScheduleOpen, setIsScheduleOpen] = useState(false);
     const [viewingClient, setViewingClient] = useState<CompletedClient | null>(null);
-
-    // Form state for new appointment
-    const [newApptDate, setNewApptDate] = useState<Date | undefined>(new Date());
     const [newApptTime, setNewApptTime] = useState('09:00');
-    const [newApptDoctor, setNewApptDoctor] = useState('');
+    const [newApptDate, setNewApptDate] = useState<Date | undefined>(new Date());
+    const [isScheduleOpen, setIsScheduleOpen] = useState(false);
     const [newApptNotes, setNewApptNotes] = useState('');
     const [editingApptId, setEditingApptId] = useState<string | null>(null);
 
@@ -86,9 +82,7 @@ const Rendezvous = () => {
             if (apptsData) setAppointments(apptsData as any);
             if (docsData) {
                 setDoctors(docsData as any);
-                if (docsData.length > 0 && window.innerWidth < 640) {
-                    setSelectedDoctorMobile(docsData[0].id);
-                }
+
             }
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -201,8 +195,14 @@ const Rendezvous = () => {
     };
 
     const handleScheduleAppt = async () => {
-        if (!selectedClient || !newApptDate || !newApptDoctor) {
+        if (!selectedClient || !newApptDate) {
             toast.error('Veuillez remplir tous les champs');
+            return;
+        }
+
+        const alemDoctorId = doctors.find(d => d.name === 'Alem')?.id || doctors[0]?.id;
+        if (!alemDoctorId) {
+            toast.error('Médecin introuvable');
             return;
         }
 
@@ -221,7 +221,7 @@ const Rendezvous = () => {
         const appointmentData = {
             client_phone: selectedClient.phone,
             client_name: selectedClient.name,
-            doctor_id: newApptDoctor,
+            doctor_id: alemDoctorId,
             appointment_at: appointmentAt.toISOString(),
             notes: newApptNotes,
             status: 'scheduled' as Appointment['status']
@@ -272,7 +272,6 @@ const Rendezvous = () => {
         const date = parseISO(appt.appointment_at);
         setNewApptDate(date);
         setNewApptTime(format(date, 'HH:mm'));
-        setNewApptDoctor(appt.doctor_id);
         setNewApptNotes(appt.notes || '');
         setIsScheduleOpen(true);
     };
@@ -591,23 +590,7 @@ const Rendezvous = () => {
                                         </div>
                                     </div>
 
-                                    {/* Mobile Doctor Switcher (Pills) */}
-                                    <div className="px-6 pb-4 sm:hidden flex overflow-scroll no-scrollbar gap-2">
-                                        {doctors.map(d => (
-                                            <button
-                                                key={d.id}
-                                                onClick={() => setSelectedDoctorMobile(d.id)}
-                                                className={`
-                                                    px-4 py-1.5 rounded-full text-xs font-black transition-all whitespace-nowrap
-                                                    ${selectedDoctorMobile === d.id
-                                                        ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-105'
-                                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'}
-                                                `}
-                                            >
-                                                Dr. {d.name}
-                                            </button>
-                                        ))}
-                                    </div>
+
 
                                     <div className="p-0 sm:p-2">
                                         <ScrollArea className="h-[650px] sm:h-[600px] px-2 sm:px-4">
@@ -643,9 +626,9 @@ const Rendezvous = () => {
                                                 )}
 
                                                 {/* Doctor Columns */}
-                                                <div className={`ml-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-full ${selectedDoctorMobile === 'all' ? 'min-w-[700px] sm:min-w-0' : ''}`}>
+                                                <div className="ml-8 grid grid-cols-1 gap-4 min-h-full">
                                                     {doctors
-                                                        .filter(d => selectedDoctorMobile === 'all' || d.id === selectedDoctorMobile)
+                                                        .filter(d => d.name === 'Alem')
                                                         .map(doctor => (
                                                             <div key={doctor.id} className="relative min-h-[1000px] rounded-2xl bg-muted/5 border border-primary/5 overflow-hidden group/col">
                                                                 {/* Column Sticky Header */}
@@ -784,17 +767,7 @@ const Rendezvous = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-xs font-black uppercase text-muted-foreground">Médecin</label>
-                            <Select value={newApptDoctor} onValueChange={setNewApptDoctor}>
-                                <SelectTrigger className="h-11 rounded-xl"><SelectValue placeholder="Choisir un médecin" /></SelectTrigger>
-                                <SelectContent>
-                                    {doctors.map(d => (
-                                        <SelectItem key={d.id} value={d.id}>Dr. {d.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+
 
                         <div className="space-y-2">
                             <label className="text-xs font-black uppercase text-muted-foreground">Notes</label>
