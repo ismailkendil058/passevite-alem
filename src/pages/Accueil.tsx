@@ -211,35 +211,44 @@ const Accueil = () => {
     }
   };
 
-  // Search for appointment when phone or state changes with debounce
+
+  // Search for appointment or patient suggestions when phone/name or state changes with debounce
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
-      const searchAppointments = async () => {
-        if (newState === 'R' && newPhone.length >= 8) {
-          const today = new Date();
-          const start = new Date(today.setHours(0, 0, 0, 0)).toISOString();
-          const end = new Date(today.setHours(23, 59, 59, 999)).toISOString();
+      const searchPatients = async () => {
+        const query = newPhone.trim() || newPatientName.trim();
 
-          const { data } = await (await import('@/integrations/supabase/client')).supabase
+        if (newState === 'R' && query.length >= 1) {
+          const now = new Date();
+          const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+          // Search in appointments for matches
+          const { data: appointments } = await supabase
             .from('appointments')
-            .select('id, client_name, doctor_id')
-            .eq('client_phone', newPhone.trim())
-            .gte('appointment_at', start)
-            .lte('appointment_at', end);
+            .select('id, client_name, client_phone, doctor_id, appointment_at, status')
+            .or(`client_phone.ilike.${query}%,client_name.ilike.%${query}%`)
+            .neq('status', 'denied')
+            .neq('status', 'attended')
+            .order('appointment_at', { ascending: true })
+            .limit(5); // Limit to 5 for compact view
 
-          if (data && data.length > 0) {
-            setFoundAppointments(data);
-            if (data.length === 1) {
-              setNewPatientName(data[0].client_name);
-              setLinkedAppointmentId(data[0].id);
-              toast.info(`Rendez-vous trouvé pour ${data[0].client_name}`);
+          if (appointments) {
+            const enhanced = appointments.map(appt => {
+              const apptDate = new Date(appt.appointment_at);
+              const isUpcoming = apptDate >= now && apptDate <= next24h;
+              return { ...appt, isUpcoming };
+            });
 
-            } else {
-              toast.info(`${data.length} rendez-vous trouvés pour ce numéro. Veuillez choisir.`);
+            setFoundAppointments(enhanced);
+
+            // Auto-link if exact phone match
+            if (newPhone.trim().length >= 8) {
+              const exact = enhanced.find(a => a.client_phone === newPhone.trim());
+              if (exact) {
+                setNewPatientName(exact.client_name);
+                setLinkedAppointmentId(exact.id);
+              }
             }
-          } else {
-            setFoundAppointments([]);
-            setLinkedAppointmentId(null);
           }
         } else {
           setFoundAppointments([]);
@@ -247,11 +256,11 @@ const Accueil = () => {
         }
       };
 
-      searchAppointments();
-    }, 500); // 500ms debounce
+      searchPatients();
+    }, 300); // Faster debounce for snappiness
 
     return () => clearTimeout(timeoutId);
-  }, [newPhone, newState]);
+  }, [newPhone, newPatientName, newState]);
 
   const handleNext = async (entry: QueueEntry) => {
     // Call client - move from waiting to in_cabinet
@@ -657,24 +666,39 @@ const Accueil = () => {
               </SelectContent>
             </Select>
 
-            {foundAppointments.length > 1 && (
-              <div className="space-y-2 p-3 bg-blue-50 border border-blue-100 rounded-lg animate-in fade-in slide-in-from-top-2">
-                <p className="text-[10px] font-bold uppercase text-blue-600">Plusieurs rendez-vous trouvés :</p>
-                <div className="flex flex-col gap-1.5">
+            {foundAppointments.length > 0 && (
+              <div className="space-y-1.5 p-2 bg-blue-50/50 border border-blue-100/50 rounded-xl animate-in fade-in slide-in-from-top-1">
+                <p className="text-[9px] font-black uppercase text-blue-600/70 tracking-widest pl-1 flex items-center gap-1.5">
+                  <CalendarIcon className="h-2.5 w-2.5" /> Suggestions
+                </p>
+                <div className="flex flex-col gap-1 max-h-[160px] overflow-y-auto pr-1">
                   {foundAppointments.map((appt) => (
                     <Button
                       key={appt.id}
                       variant={linkedAppointmentId === appt.id ? "default" : "outline"}
                       size="sm"
-                      className="justify-start h-auto py-2 text-left"
+                      className={`justify-start h-auto py-1.5 px-2.5 text-left rounded-lg border-blue-100/30 transition-all ${linkedAppointmentId === appt.id ? 'bg-blue-600' : 'bg-white'}`}
                       onClick={() => {
                         setNewPatientName(appt.client_name);
+                        setNewPhone(appt.client_phone);
                         setLinkedAppointmentId(appt.id);
                       }}
                     >
-                      <div className="min-w-0">
-                        <p className="font-bold truncate">{appt.client_name}</p>
-                        <p className="text-[10px] opacity-70">Dr. {doctors.find(d => d.id === appt.doctor_id)?.name || '...'}</p>
+                      <div className="min-w-0 flex-1 flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-bold truncate text-[13px]">{appt.client_name}</p>
+                            {appt.isUpcoming && (
+                              <div className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse shrink-0" />
+                            )}
+                          </div>
+                          <p className={`text-[9px] leading-tight ${linkedAppointmentId === appt.id ? 'opacity-80' : 'text-muted-foreground'}`}>
+                            {appt.client_phone}
+                          </p>
+                        </div>
+                        {appt.isUpcoming && !linkedAppointmentId && (
+                          <span className="text-[8px] font-black text-emerald-600 uppercase bg-emerald-50 px-1 rounded-sm shrink-0 tracking-tighter">RDV</span>
+                        )}
                       </div>
                     </Button>
                   ))}

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     LogOut, Search, MessageSquare, Calendar as CalendarIcon,
-    Users, CheckCircle2, XCircle, Clock, History, Plus, Phone
+    Users, CheckCircle2, XCircle, Clock, History as HistoryIcon, Plus, Phone, ArrowLeft
 } from 'lucide-react';
 import { format, addHours, isWithinInterval, startOfDay, endOfDay, parseISO, startOfToday, endOfToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -50,6 +51,7 @@ interface Doctor {
 }
 
 const Rendezvous = () => {
+    const navigate = useNavigate();
     useAuth();
 
     const [clients, setClients] = useState<CompletedClient[]>([]);
@@ -157,7 +159,7 @@ const Rendezvous = () => {
         return parsedAppointments.filter(a => {
             const apptDate = parseISO(a.appointment_at);
             const isWithin24h = isWithinInterval(apptDate, { start: now, end: next24h });
-            return isWithin24h && a.status !== 'attended' && a.status !== 'denied';
+            return isWithin24h && a.status !== 'attended' && a.status !== 'denied' && a.status !== 'coming';
         });
     }, [parsedAppointments]);
 
@@ -299,11 +301,9 @@ const Rendezvous = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => window.location.href = '/manager'} className="h-9 w-9">
-                        <History className="h-5 w-5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => window.location.href = '/accueil'} className="h-9 w-9">
-                        <LogOut className="h-5 w-5" />
+
+                    <Button variant="ghost" size="icon" onClick={() => navigate('/accueil')} className="h-9 w-9">
+                        <ArrowLeft className="h-5 w-5" />
                     </Button>
                 </div>
             </header>
@@ -466,7 +466,7 @@ const Rendezvous = () => {
 
                                                 <div className="space-y-4">
                                                     <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                                                        <History className="h-3.5 w-3.5" /> Historique des Paiements
+                                                        <HistoryIcon className="h-3.5 w-3.5" /> Historique des Paiements
                                                     </h4>
                                                     <div className="border rounded-xl overflow-hidden">
                                                         <Table>

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -179,6 +180,22 @@ const MedecinDashboard = () => {
             return (pDate >= targetDate && pDate <= targetEnd) ? acc + (p.tranche_paid || 0) : acc;
         }, 0);
     }, [patients, selectedRevenueDate]);
+
+    const handleDeletePatient = async (phone: string, name: string) => {
+        const { error } = await supabase
+            .from('completed_clients')
+            .delete()
+            .eq('phone', phone)
+            .eq('client_name', name);
+
+        if (error) {
+            toast.error('Erreur lors de la suppression');
+        } else {
+            toast.success('Patient supprimé');
+            setPatients(prev => prev.filter(p => !(p.phone === phone && p.client_name === name)));
+            setIsPatientDialogOpen(false);
+        }
+    };
 
     const monthlyData = useMemo(() => {
         const last6Months = Array.from({ length: 6 }).map((_, i) => {
@@ -442,10 +459,34 @@ const MedecinDashboard = () => {
                                                 <div className="h-12 w-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary font-black text-xl group-hover:bg-primary group-hover:text-white transition-all">
                                                     {p.client_name.charAt(0)}
                                                 </div>
-                                                <div>
-                                                    <h3 className="font-bold text-slate-800">{p.client_name}</h3>
+                                                <div className="flex-1 min-w-0">
+                                                    <h3 className="font-bold text-slate-800 truncate">{p.client_name}</h3>
                                                     <p className="text-xs text-slate-400">{p.phone}</p>
                                                 </div>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-slate-300 hover:text-destructive hover:bg-destructive/10 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent onClick={(e) => e.stopPropagation()} className="rounded-3xl">
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Supprimer ce patient ?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Cette action est irréversible.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={(e) => { e.stopPropagation(); handleDeletePatient(p.phone, p.client_name); }} className="bg-destructive hover:bg-destructive/90 rounded-xl">Supprimer</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </div>
                                             <div className="space-y-2 border-t pt-4">
                                                 <div className="flex justify-between text-xs font-medium">
