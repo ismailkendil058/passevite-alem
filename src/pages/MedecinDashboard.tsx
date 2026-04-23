@@ -34,13 +34,37 @@ const MedecinDashboard = () => {
     const [doctorInfo, setDoctorInfo] = useState<{ id: string, name: string } | null>(null);
 
     useEffect(() => {
-        const authData = localStorage.getItem('doctor_auth');
-        if (authData) {
-            setDoctorInfo(JSON.parse(authData));
-        } else {
-            navigate('/doctor/login');
-        }
-    }, [navigate]);
+        const fetchDefaultDoctor = async () => {
+            const authData = localStorage.getItem('doctor_auth');
+            if (authData) {
+                setDoctorInfo(JSON.parse(authData));
+            } else {
+                // Try to find Dr. Alem by default
+                const { data } = await supabase
+                    .from('doctors')
+                    .select('id, name')
+                    .eq('name', 'Alem')
+                    .maybeSingle();
+
+                if (data) {
+                    setDoctorInfo(data);
+                    localStorage.setItem('doctor_auth', JSON.stringify({ ...data, role: 'doctor' }));
+                } else {
+                    // Fallback to first doctor if Alem not found
+                    const { data: firstDoc } = await supabase
+                        .from('doctors')
+                        .select('id, name')
+                        .limit(1)
+                        .maybeSingle();
+                    if (firstDoc) {
+                        setDoctorInfo(firstDoc);
+                        localStorage.setItem('doctor_auth', JSON.stringify({ ...firstDoc, role: 'doctor' }));
+                    }
+                }
+            }
+        };
+        fetchDefaultDoctor();
+    }, []);
 
     // DASHBOARD DATA
     const [prescriptions, setPrescriptions] = useState<any[]>([]);
@@ -197,8 +221,8 @@ const MedecinDashboard = () => {
                         <span className="text-sm font-bold text-slate-700">Dr. {doctorInfo ? doctorInfo.name : 'Chargement...'}</span>
                         <p className="text-[10px] text-muted-foreground uppercase font-medium">Session Active</p>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-9 w-9 text-rose-500 hover:bg-rose-50 rounded-full">
-                        <LogOut className="h-5 w-5" />
+                    <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="h-9 w-9 text-primary hover:bg-primary/5 rounded-full">
+                        <ArrowUpRight className="h-5 w-5" />
                     </Button>
                 </div>
             </header>

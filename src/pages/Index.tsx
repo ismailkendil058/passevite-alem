@@ -5,8 +5,8 @@ import { Users, Monitor, UserCog, Tv, ClipboardCheck, Stethoscope } from 'lucide
 
 const Index = () => {
   const sections = [
-    { title: 'Accueil', description: 'Gestion de la réception et de la file', icon: Monitor, href: '/accueil/login', variant: 'outline' as const },
-    { title: 'Médecin', description: 'Espace Médecin et Ordonnances', icon: Stethoscope, href: '/doctor/login', variant: 'outline' as const },
+    { title: 'Accueil', description: 'Gestion de la réception et de la file', icon: Monitor, href: '/accueil', variant: 'outline' as const },
+    { title: 'Médecin', description: 'Espace Médecin et Ordonnances', icon: Stethoscope, href: '/doctor-dashboard', variant: 'outline' as const },
   ];
 
   return (

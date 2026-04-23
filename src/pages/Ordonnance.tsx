@@ -426,49 +426,160 @@ const Ordonnance = () => {
         </DialogContent>
       </Dialog>
 
-      {/* PRINT TEMPLATE - Refined visibility for v3 compatibility */}
+      {/* PRINT TEMPLATE */}
       <div className="invisible absolute top-0 left-0 pointer-events-none overflow-hidden h-0 w-0">
-        <div ref={printRef} className="p-[40px] p-10 font-sans text-slate-800 bg-white" style={{ width: '210mm', minHeight: '297mm' }}>
-          <div className="flex justify-between items-start mb-20">
-            <div>
-              <h1 className="text-4xl font-black italic text-primary">Dr Alem</h1>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 mt-1">Clinique Dentaire</p>
+        <div ref={printRef} className="print-container bg-white" style={{ width: '210mm', minHeight: '297mm', padding: '22mm 20mm 20mm 20mm' }}>
+          <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap');
+            
+            .print-container {
+              font-family: 'Cormorant Garamond', Georgia, serif;
+              color: #111;
+              line-height: 1.2;
+              background: white;
+            }
+            .header-title {
+              font-family: 'IM Fell English', serif;
+              font-style: italic;
+              font-size: 22pt;
+              letter-spacing: 0.03em;
+              line-height: 1.25;
+              text-align: center;
+            }
+            .header-subtitle {
+              font-family: 'Cormorant Garamond', serif;
+              font-size: 16pt;
+              font-weight: 400;
+              text-align: center;
+              margin-top: 2mm;
+            }
+            .header-address {
+              font-family: 'Cormorant Garamond', serif;
+              font-style: italic;
+              font-size: 10pt;
+              color: #333;
+              text-align: center;
+              margin-top: 4mm;
+            }
+            .divider {
+              border: none;
+              border-top: 1.5px solid #111;
+              margin: 5mm 0;
+            }
+            .doctors-row {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 6mm;
+            }
+            .doctor-item {
+              font-family: 'IM Fell English', serif;
+              font-style: italic;
+              font-size: 13pt;
+            }
+            .arabic-text {
+              font-family: 'Cormorant Garamond', serif;
+              font-style: normal;
+              font-size: 11pt;
+              direction: rtl;
+              display: block;
+            }
+            .date-row {
+              text-align: right;
+              font-family: 'IM Fell English', serif;
+              font-style: italic;
+              font-size: 11.5pt;
+              margin-bottom: 5mm;
+            }
+            .field-line {
+              display: inline-block;
+              border-bottom: 1px solid #555;
+              padding: 0 4px;
+            }
+            .patient-row {
+              display: flex;
+              gap: 6mm;
+              font-family: 'IM Fell English', serif;
+              font-style: italic;
+              font-size: 11.5pt;
+              margin-bottom: 8mm;
+            }
+            .ordonnance-title {
+              text-align: center;
+              font-family: 'IM Fell English', serif;
+              font-style: italic;
+              font-size: 18pt;
+              font-weight: 600;
+              text-decoration: underline;
+              text-underline-offset: 3px;
+              letter-spacing: 0.06em;
+              margin-bottom: 12mm;
+            }
+            .med-item {
+              margin-bottom: 6mm;
+              padding-left: 4mm;
+            }
+            .med-name {
+              font-size: 14pt;
+              font-weight: 600;
+              margin-bottom: 1mm;
+            }
+            .med-details {
+              font-size: 11pt;
+              font-style: italic;
+              color: #444;
+            }
+          `}</style>
+
+          <div className="header-title">
+            DENTISTERIE ESTHÉTIQUE<br />
+            IMPLANTOLOGIE ODF
+          </div>
+          <div className="header-subtitle">Prothèse fixe et amovible</div>
+          <div className="header-address">
+            Cité Mitidja BTI Cage N°1 Rouiba – Alger<br />
+            Tél : 0770 34 58 80 / 0559 82 92 39
+          </div>
+
+          <hr className="divider" />
+
+          <div className="doctors-row">
+            <div className="doctor-item">
+              Dr M.ALEM<br />
+              <span className="arabic-text">الحكيم م علام</span>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-black">Dr. {doctor.name}</p>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Docteur en Médecine</p>
+            <div className="doctor-item text-right">
+              Dr Aghiles ALEM<br />
+              <span className="arabic-text text-right" style={{ textAlign: 'right' }}>الحكيم اغيلاس علام</span>
             </div>
           </div>
 
-          <div className="flex justify-between items-end border-b-4 border-slate-50 pb-6 mb-12">
-            <div>
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-widest mb-1">Patient</p>
-              <h2 className="text-3xl font-black">{formData.patient_name || '...'}</h2>
-              {formData.age && <p className="text-sm font-bold text-slate-500">{formData.age} ans</p>}
+          <div className="date-row">
+            Rouiba : le <span className="field-line" style={{ minWidth: '55mm' }}>{format(formData.prescription_date, 'dd/MM/yyyy')}</span>
+          </div>
+
+          <div className="patient-row">
+            <div style={{ flex: 2 }}>
+              Nom & Prénom : <span className="field-line" style={{ minWidth: '80mm' }}>{formData.patient_name || '................................'}</span>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-widest mb-1">Date</p>
-              <p className="text-base font-bold">{format(formData.prescription_date, 'dd MMMM yyyy', { locale: fr })}</p>
+            <div style={{ flex: 1 }}>
+              Age : <span className="field-line" style={{ minWidth: '20mm' }}>{formData.age ? `${formData.age} ans` : '............'}</span>
             </div>
           </div>
 
-          <div className="space-y-10 min-h-[400px]">
-            <h3 className="text-xs font-black uppercase tracking-[0.6em] text-slate-300 text-center italic mb-12 underline underline-offset-[12px]">Prescription</h3>
+          <div className="ordonnance-title">ORDONNANCE</div>
+
+          <div className="writing-area" style={{ minHeight: '130mm' }}>
             {formData.medications.map((m, i) => (
-              <div key={i} className="relative pl-8 mb-6">
-                <div className="absolute left-0 top-1.5 h-2.5 w-2.5 bg-primary rounded-full" />
-                <div className="flex justify-between items-baseline mb-1">
-                  <p className="text-xl font-black">{m.name}</p>
-                  <p className="text-sm font-bold text-slate-400">Total: {m.duree}</p>
+              m.name && (
+                <div key={i} className="med-item">
+                  <div className="med-name">- {m.name} {m.dosage}</div>
+                  <div className="med-details">
+                    {m.duree && <span>Qsp: {m.duree} — </span>}
+                    {m.frequency_count} fois/{m.frequency_unit === 'day' ? 'j' : 'sem'} {m.timing === 'avant' ? 'avant' : 'après'} repas
+                  </div>
                 </div>
-                <p className="text-sm font-medium italic text-slate-500">{m.dosage} — {formatFrequencyLine(m)}</p>
-              </div>
+              )
             ))}
-          </div>
-
-          <div className="mt-20 pt-10 border-t border-slate-50 flex justify-between items-center opacity-40">
-            <p className="text-[8px] font-black uppercase tracking-widest">Généré par PasseVite Dental v2.0</p>
-            <div className="h-20 w-32 border-2 border-slate-100 rounded-3xl flex items-center justify-center italic text-[8px] font-black text-slate-100 uppercase tracking-widest">Cachet & Signature</div>
           </div>
         </div>
       </div>

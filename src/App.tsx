@@ -45,32 +45,7 @@ const queryClient = new QueryClient({
 });
 
 function ProtectedRoute({ children, requiredRoles }: { children: React.ReactNode; requiredRoles?: string[] }) {
-  const { user, loading, userRole } = useAuth();
-
-  // Also check if the doctor is logged in via our custom localStorage method
-  const isDoctorLoggedIn = !!localStorage.getItem('doctor_auth');
-
-  if (loading) return <LoadingScreen />;
-
-  // Allow doctors unfettered access to protected routes like manager
-  if (isDoctorLoggedIn && requiredRoles && requiredRoles.includes('manager')) {
-    return <>{children}</>;
-  }
-
-  if (!user) {
-    if (requiredRoles?.includes('manager')) return <Navigate to="/manager/login" replace />;
-    if (requiredRoles?.includes('receptionist')) return <Navigate to="/accueil/login" replace />;
-    return <Navigate to="/" replace />;
-  }
-
-  if (requiredRoles && userRole === null) return <LoadingScreen />;
-
-  if (requiredRoles && !requiredRoles.includes(userRole || '')) {
-    if (userRole === 'manager') return <Navigate to="/manager" replace />;
-    if (userRole === 'receptionist') return <Navigate to="/accueil" replace />;
-    return <Navigate to="/" replace />;
-  }
-
+  // Always return children to remove login requirements for both doctor and accueil
   return <>{children}</>;
 }
 

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Phone, Plus, LogOut, ChevronRight, ChevronLeft, Users, Clock, CheckCircle, XCircle, MessageCircle, Pencil, Trash2, UserCheck, Calendar as CalendarIcon, DollarSign, ShoppingCart } from 'lucide-react';
+import { Phone, Plus, LogOut, ChevronRight, ChevronLeft, ArrowLeft, Users, Clock, CheckCircle, XCircle, MessageCircle, Pencil, Trash2, UserCheck, Calendar as CalendarIcon, DollarSign, ShoppingCart } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -463,7 +463,9 @@ const Accueil = () => {
             <h1 className="text-lg sm:text-xl font-bold text-primary italic">PasseVite</h1>
             <p className="text-[10px] text-muted-foreground uppercase">le soin qui passe</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
+          <Link to="/">
+            <Button variant="ghost" size="icon"><ArrowLeft className="h-4 w-4" /></Button>
+          </Link>
         </header>
         <div className="flex-1 flex items-center justify-center p-4">
           <Card className="w-full max-w-sm text-center border-0 shadow-lg">
@@ -515,12 +517,7 @@ const Accueil = () => {
             </Button>
           </Link>
 
-          <Button variant="outline" size="sm" onClick={fetchCompleted} className="hidden sm:flex h-8 px-3 text-[11px] font-black uppercase tracking-widest">
-            <CheckCircle className="h-3.5 w-3.5 mr-1.5" /> Terminés
-          </Button>
-          <Button variant="outline" size="icon" onClick={fetchCompleted} className="sm:hidden h-8 w-8 rounded-full">
-            <CheckCircle className="h-4 w-4" />
-          </Button>
+
 
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -554,7 +551,9 @@ const Accueil = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          <Button variant="ghost" size="icon" onClick={signOut} className="h-8 w-8"><LogOut className="h-4 w-4" /></Button>
+          <Link to="/">
+            <Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button>
+          </Link>
         </div>
       </header>
 

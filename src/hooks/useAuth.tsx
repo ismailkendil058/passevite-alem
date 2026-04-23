@@ -51,7 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }, 0);
         } else {
           setUserRole(null);
-          setLoading(false);
+          // If no session, try to auto-login with demo receptionist account
+          const autoLogin = async () => {
+            const { error, data } = await supabase.auth.signInWithPassword({
+              email: 'accueil@gmail.com',
+              password: 'accueil123'
+            });
+            if (error && mounted) {
+              setLoading(false);
+            }
+          };
+          autoLogin();
         }
       }
     );
@@ -70,7 +80,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         }
       } else {
-        if (mounted) setLoading(false);
+        // If no session, the onAuthStateChange will trigger autoLogin
+        // But we can also trigger it here to be sure
+        const { error } = await supabase.auth.signInWithPassword({
+          email: 'accueil@gmail.com',
+          password: 'accueil123'
+        });
+        if (error && mounted) {
+          setLoading(false);
+        }
       }
     });
 
