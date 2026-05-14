@@ -14,11 +14,13 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     LogOut, Search, MessageSquare, Calendar as CalendarIcon,
-    Users, CheckCircle2, XCircle, Clock, History as HistoryIcon, Plus, Phone, ArrowLeft
+    Users, CheckCircle2, XCircle, Clock, History as HistoryIcon, Plus, Phone, ArrowLeft, Pencil
 } from 'lucide-react';
 import { format, addHours, isWithinInterval, startOfDay, endOfDay, parseISO, startOfToday, endOfToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
+
+const TREATMENTS = ['Consultation', 'Blanchiment', 'Extraction', 'Détartrage', 'Soin dentaire', 'Prothèse', 'Orthodontie', 'ODF'];
 
 interface CompletedClient {
     id: string;
@@ -66,6 +68,18 @@ const Rendezvous = () => {
     const [isScheduleOpen, setIsScheduleOpen] = useState(false);
     const [newApptNotes, setNewApptNotes] = useState('');
     const [editingApptId, setEditingApptId] = useState<string | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
+    const [isEditDossierOpen, setIsEditDossierOpen] = useState(false);
+    const [selectedNote, setSelectedNote] = useState<string | null>(null);
+    const [editDossierData, setEditDossierData] = useState<{
+        originalName: string;
+        originalPhone: string;
+        originalTreatment: string;
+        name: string;
+        phone: string;
+        treatment: string;
+        totalAmount: number;
+    } | null>(null);
 
     const fetchInitialData = async () => {
         setLoading(true);
@@ -115,7 +129,7 @@ const Rendezvous = () => {
             if (data) setClients(data as any);
         }, 300);
         return () => clearTimeout(timeoutId);
-    }, [searchQuery]);
+    }, [searchQuery, refreshKey]);
 
     // Deduplication and debt filtering logic
     const uniqueClients = useMemo(() => {
@@ -288,6 +302,38 @@ const Rendezvous = () => {
         return { history, appts };
     };
 
+    const handleUpdateDossier = async () => {
+        if (!editDossierData) return;
+
+        try {
+            const { error } = await supabase
+                .from('completed_clients')
+                .update({
+                    client_name: editDossierData.name,
+                    phone: editDossierData.phone,
+                    treatment: editDossierData.treatment,
+                    total_amount: editDossierData.totalAmount
+                })
+                .match({
+                    client_name: editDossierData.originalName,
+                    phone: editDossierData.originalPhone,
+                    treatment: editDossierData.originalTreatment
+                });
+
+            if (error) throw error;
+
+            toast.success('Dossier mis à jour avec succès');
+            setIsEditDossierOpen(false);
+            setEditDossierData(null);
+            setViewingClient(null); // Close the dossier view to refresh
+            setRefreshKey(prev => prev + 1); // Refresh client list
+            fetchInitialData(); // Refresh all data
+        } catch (error) {
+            console.error('Error updating dossier:', error);
+            toast.error('Erreur lors de la mise à jour du dossier');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <header className="flex items-center justify-between p-4 border-b sticky top-0 bg-background/80 backdrop-blur-md z-20">
@@ -456,12 +502,28 @@ const Rendezvous = () => {
                                                         <h3 className="text-lg font-bold">{viewingClient.client_name}</h3>
                                                         <p className="text-sm font-medium text-primary">{viewingClient.phone}</p>
                                                     </div>
-                                                    <Button variant="default" className="gap-2" onClick={() => {
-                                                        setSelectedClient({ phone: viewingClient.phone, name: viewingClient.client_name });
-                                                        setIsScheduleOpen(true);
-                                                    }}>
-                                                        <Plus className="h-4 w-4" /> Nouveau RDV
-                                                    </Button>
+                                                    <div className="flex gap-2">
+                                                        <Button variant="outline" size="icon" onClick={() => {
+                                                            setEditDossierData({
+                                                                originalName: viewingClient.client_name,
+                                                                originalPhone: viewingClient.phone,
+                                                                originalTreatment: viewingClient.treatment,
+                                                                name: viewingClient.client_name,
+                                                                phone: viewingClient.phone,
+                                                                treatment: viewingClient.treatment,
+                                                                totalAmount: viewingClient.total_amount
+                                                            });
+                                                            setIsEditDossierOpen(true);
+                                                        }}>
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button variant="default" className="gap-2" onClick={() => {
+                                                            setSelectedClient({ phone: viewingClient.phone, name: viewingClient.client_name });
+                                                            setIsScheduleOpen(true);
+                                                        }}>
+                                                            <Plus className="h-4 w-4" /> Nouveau RDV
+                                                        </Button>
+                                                    </div>
                                                 </div>
 
                                                 <div className="space-y-4">
@@ -486,7 +548,13 @@ const Rendezvous = () => {
                                                                         <TableCell className="text-xs py-2">
                                                                             <div>{h.treatment}</div>
                                                                         </TableCell>
-                                                                        <TableCell className="text-xs py-2 text-slate-500 max-w-[150px] truncate" title={h.notes}>{h.notes || '-'}</TableCell>
+                                                                        <TableCell
+                                                                            className={`text-xs py-2 text-slate-500 max-w-[150px] truncate ${h.notes ? 'cursor-pointer hover:text-primary hover:font-medium transition-all' : ''}`}
+                                                                            title={h.notes ? "Cliquez pour voir la note complète" : ""}
+                                                                            onClick={() => h.notes && setSelectedNote(h.notes)}
+                                                                        >
+                                                                            {h.notes || '-'}
+                                                                        </TableCell>
                                                                         <TableCell className="text-xs py-2 text-right font-medium">{h.total_amount?.toLocaleString()}</TableCell>
                                                                         <TableCell className="text-xs py-2 text-right text-emerald-600 font-bold">{h.tranche_paid?.toLocaleString()}</TableCell>
                                                                     </TableRow>
@@ -780,6 +848,83 @@ const Rendezvous = () => {
                         <Button onClick={handleScheduleAppt} className="rounded-xl h-11 flex-1 bg-primary">
                             {editingApptId ? 'Enregistrer' : 'Confirmer'}
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEditDossierOpen} onOpenChange={setIsEditDossierOpen}>
+                <DialogContent className="sm:rounded-2xl max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold italic">Modifier le Dossier</DialogTitle>
+                    </DialogHeader>
+
+                    {editDossierData && (
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase text-muted-foreground">Nom du Patient</label>
+                                <Input
+                                    value={editDossierData.name}
+                                    onChange={(e) => setEditDossierData({ ...editDossierData, name: e.target.value })}
+                                    className="h-11 rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase text-muted-foreground">Téléphone</label>
+                                <Input
+                                    value={editDossierData.phone}
+                                    onChange={(e) => setEditDossierData({ ...editDossierData, phone: e.target.value })}
+                                    className="h-11 rounded-xl"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase text-muted-foreground">Traitement</label>
+                                <Select
+                                    value={editDossierData.treatment}
+                                    onValueChange={(v) => setEditDossierData({ ...editDossierData, treatment: v })}
+                                >
+                                    <SelectTrigger className="h-11 rounded-xl">
+                                        <SelectValue placeholder="Traitement" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {TREATMENTS.map(t => (
+                                            <SelectItem key={t} value={t}>{t}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-black uppercase text-muted-foreground">Montant Total (DZD)</label>
+                                <Input
+                                    type="number"
+                                    value={editDossierData.totalAmount}
+                                    onChange={(e) => setEditDossierData({ ...editDossierData, totalAmount: parseFloat(e.target.value) || 0 })}
+                                    className="h-11 rounded-xl"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter className="gap-2">
+                        <Button variant="outline" onClick={() => setIsEditDossierOpen(false)} className="rounded-xl h-11 flex-1">Annuler</Button>
+                        <Button onClick={handleUpdateDossier} className="rounded-xl h-11 flex-1 bg-primary">
+                            Enregistrer
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!selectedNote} onOpenChange={(open) => !open && setSelectedNote(null)}>
+                <DialogContent className="sm:rounded-2xl max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold italic">Note de visite</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-foreground whitespace-pre-wrap bg-muted/30 p-4 rounded-xl border border-dashed text-center">
+                            {selectedNote}
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setSelectedNote(null)} className="rounded-xl h-11 w-full bg-primary">Fermer</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
